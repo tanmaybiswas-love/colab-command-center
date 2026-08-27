@@ -4,7 +4,7 @@ services:
     plan: starter
     region: oregon
     healthCheckPath: /api/healthz
-    buildCommand: cd artifacts/colab-command-center && npm install && npm run build && mkdir -p ../../colab-command-center && cp -r dist/public/* ../../colab-command-center/ && cd ../../artifacts/api-server && npm install
+    buildCommand: cd artifacts/colab-command-center && npm install && npm run build && mkdir -p ../../colab-command-center/dist && cp -r dist/public ../../colab-command-center/dist/ && cd ../../artifacts/api-server && npm install
     startCommand: cd artifacts/api-server && node src/index.js
     envVars:
       - key: NODE_ENV
