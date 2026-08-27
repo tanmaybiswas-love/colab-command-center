@@ -4,8 +4,8 @@ services:
     runtime: node
     plan: starter
     region: oregon
-    buildCommand: pnpm install && pnpm run build
-    startCommand: pnpm start
+    buildCommand: cd artifacts/colab-command-center && npm install && npm run build && cd ../api-server && npm install && npm run build && cd ../..
+    startCommand: node artifacts/api-server/dist/index.js
     healthCheckPath: /api/healthz
     envVars:
       - key: NODE_VERSION
