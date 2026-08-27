@@ -19,6 +19,7 @@ import {
   useSendAssistantMessage,
   type RuntimeStatus,
   type RuntimeEvent,
+setBaseUrl,
 } from '@workspace/api-client-react';
 import { Link, Route, Switch, Router as WouterRouter, useLocation } from 'wouter';
 import {
@@ -51,6 +52,9 @@ const formatDateTime = (date?: string | null) => date ? new Intl.DateTimeFormat(
 const stateLabel = (state?: RuntimeStatus['state']) => state === 'connected' ? 'Connected' : state === 'busy' ? 'Executing' : state === 'waiting' ? 'Waiting for connector' : state === 'error' ? 'Attention needed' : 'Offline';
 
 function App() {
+  useEffect(() => {
+    setBaseUrl(window.location.origin);
+  }, []);
   const [provider, setProviderState] = useState<Prefs['provider']>(() => (localStorage.getItem('ccc-provider') as Prefs['provider']) || 'gemini');
   const [model, setModelState] = useState(() => localStorage.getItem('ccc-model') || 'gemini-2.0-flash');
   const [safeMode, setSafeModeState] = useState(() => localStorage.getItem('ccc-safe-mode') !== 'false');
