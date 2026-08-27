@@ -1,15 +1,11 @@
 services:
-  - type: web_service
+  - type: web
     name: colab-command-center
     runtime: node
     plan: starter
     region: oregon
-    buildCommand: |
-      echo "Starting build..."
-      pnpm install
-      pnpm run build
-      echo "Build completed!"
-    startCommand: pnpm start
+    buildCommand: pnpm install && pnpm run build
+    startCommand: node artifacts/api-server/dist/index.js
     healthCheckPath: /api/healthz
     envVars:
       - key: NODE_VERSION
