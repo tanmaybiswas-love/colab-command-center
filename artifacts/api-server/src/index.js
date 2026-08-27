@@ -21,6 +21,8 @@ const runtimeState = {
   lastActivity: null,
   sessionId: null,
   token: null,
+  label: null,
+  pythonVersion: null,
 };
 
 const events = [];
