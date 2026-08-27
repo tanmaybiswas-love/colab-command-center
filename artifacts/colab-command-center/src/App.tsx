@@ -19,8 +19,8 @@ import {
   useSendAssistantMessage,
   type RuntimeStatus,
   type RuntimeEvent,
-setBaseUrl,
 } from '@workspace/api-client-react';
+import { setBaseUrl } from '@workspace/api-client-react';
 import { Link, Route, Switch, Router as WouterRouter, useLocation } from 'wouter';
 import {
   Activity, ArrowUpRight, Check, CircleHelp, Cloud, Code2,
