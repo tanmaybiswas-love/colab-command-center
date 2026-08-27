@@ -68,7 +68,9 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <PrefsContext.Provider value={{ provider, model, safeMode, confirmExecution, apiKey, setProvider, setModel, setSafeMode, setConfirmExecution, setApiKey }}>
         <TooltipProvider>
-          <Shell />
+          <Router base={import.meta.env.BASE_URL.replace(/\/$/, '')}>
+            <Shell />
+          </Router>
         </TooltipProvider>
       </PrefsContext.Provider>
     </QueryClientProvider>
