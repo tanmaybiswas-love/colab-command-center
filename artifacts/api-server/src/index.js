@@ -11,7 +11,7 @@ app.use(cors());
 app.use(express.json());
 
 // Serve static files from frontend
-const frontendPath = path.join(__dirname, '../../../colab-command-center/public');
+const frontendPath = path.join(__dirname, '../../../colab-command-center/dist/public');
 app.use(express.static(frontendPath));
 
 // In-memory state (in production, use Redis or a database)
