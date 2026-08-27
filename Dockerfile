@@ -1,24 +1,27 @@
-# Stage 1: Build
-FROM node:24-slim AS builder
+# syntax=docker/dockerfile:1
+FROM node:24-alpine AS builder
 
 WORKDIR /app
-
-# Copy entire project
-COPY . .
 
 # Install pnpm
-RUN npm install -g pnpm@9
+RUN npm install -g pnpm
 
-# Install dependencies and build
-RUN pnpm install
+# Copy package files
+COPY package.json pnpm-workspace.yaml ./
+
+# Copy source
+COPY lib ./lib
+COPY artifacts ./artifacts
+
+# Install deps and build
+RUN pnpm install --frozen-lockfile || pnpm install
 RUN pnpm run build
 
-# Stage 2: Production
-FROM node:24-slim AS production
+# Production stage
+FROM node:24-alpine
 
 WORKDIR /app
 
-# Copy built files
 COPY --from=builder /app/artifacts ./artifacts
 
 ENV NODE_ENV=production
