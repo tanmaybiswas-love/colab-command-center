@@ -1,32 +1,26 @@
-# syntax=docker/dockerfile:1
-FROM node:24-alpine AS builder
+FROM node:24-alpine
 
 WORKDIR /app
 
 # Install pnpm
 RUN npm install -g pnpm
 
-# Copy package files
-COPY package.json pnpm-workspace.yaml ./
+# Copy all files
+COPY . .
 
-# Copy source
-COPY lib ./lib
-COPY artifacts ./artifacts
+# Install deps
+RUN pnpm install
 
-# Install deps and build
-RUN pnpm install --frozen-lockfile || pnpm install
-RUN pnpm run build
+# Build frontend
+RUN cd artifacts/colab-command-center && pnpm build && cd ../..
 
-# Production stage
-FROM node:24-alpine
-
-WORKDIR /app
-
-COPY --from=builder /app/artifacts ./artifacts
+# Build API server
+RUN cd artifacts/api-server && pnpm build && cd ../..
 
 ENV NODE_ENV=production
 ENV PORT=10000
 
 EXPOSE 10000
 
+# Start API server
 CMD ["node", "artifacts/api-server/dist/index.js"]
