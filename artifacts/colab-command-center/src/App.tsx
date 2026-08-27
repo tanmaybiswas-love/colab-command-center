@@ -65,9 +65,11 @@ function App() {
   const setSafeMode = (value: boolean) => { setSafeModeState(value); localStorage.setItem('ccc-safe-mode', String(value)); };
   const setConfirmExecution = (value: boolean) => { setConfirmState(value); localStorage.setItem('ccc-confirm', String(value)); };
   return (
-    <PrefsContext.Provider value={{ provider, model, safeMode, confirmExecution, apiKey, setProvider, setModel, setSafeMode, setConfirmExecution, setApiKey }}>
-      <div>Hello World</div>
-    </PrefsContext.Provider>
+    <QueryClientProvider client={queryClient}>
+      <PrefsContext.Provider value={{ provider, model, safeMode, confirmExecution, apiKey, setProvider, setModel, setSafeMode, setConfirmExecution, setApiKey }}>
+        <div>Hello World</div>
+      </PrefsContext.Provider>
+    </QueryClientProvider>
   );
 }
 
