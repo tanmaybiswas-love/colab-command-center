@@ -21,7 +21,7 @@ import {
   type RuntimeEvent,
 } from '@workspace/api-client-react';
 import { setBaseUrl } from '@workspace/api-client-react';
-import { Link, Route, Switch, Router, useLocation } from 'wouter';
+import { Link, Route, Switch, Router as WouterRouter, useLocation } from 'wouter';
 import {
   Activity, ArrowUpRight, Check, CircleHelp, Cloud, Code2,
   Copy, Cpu, FileCode2, Gauge, KeyRound, Laptop, Loader2, Menu,
@@ -68,10 +68,10 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <PrefsContext.Provider value={{ provider, model, safeMode, confirmExecution, apiKey, setProvider, setModel, setSafeMode, setConfirmExecution, setApiKey }}>
         <TooltipProvider>
-          <Router base={import.meta.env.BASE_URL.replace(/\/$/, '')}>
-            <Shell />
-            <Toaster />
-          </Router>
+          <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}>
+            <RoutedErrorBoundary><Shell /></RoutedErrorBoundary>
+          </WouterRouter>
+          <Toaster />
         </TooltipProvider>
       </PrefsContext.Provider>
     </QueryClientProvider>
