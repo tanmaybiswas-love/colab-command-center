@@ -1,9 +1,9 @@
 services:
   - type: web
-    name: cc-plus
+    name: colab-command-center
     runtime: node
     plan: free
-    buildCommand: npm install -g pnpm && pnpm install && pnpm run build
+    buildCommand: pnpm install && pnpm run build
     startCommand: NODE_ENV=production PORT=10000 node artifacts/api-server/dist/index.js
     healthCheckPath: /api/healthz
     envVars:
