@@ -316,11 +316,6 @@ app.get('/api/status', (req, res) => {
   });
 });
 
-// Serve index.html for all other routes (SPA support)
-app.get('*', (req, res) => {
-  res.sendFile(path.join(frontendPath, 'index.html'));
-});
-
 // Debug endpoint
 app.get('/api/debug', (req, res) => {
   const fs = require('fs');
@@ -332,6 +327,11 @@ app.get('/api/debug', (req, res) => {
     files,
     __dirname,
   });
+});
+
+// Serve index.html for all other routes (SPA support)
+app.get('*', (req, res) => {
+  res.sendFile(path.join(frontendPath, 'index.html'));
 });
 
 app.listen(PORT, '0.0.0.0', () => {
