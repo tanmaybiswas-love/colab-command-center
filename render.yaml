@@ -3,7 +3,7 @@ services:
     name: cc-plus
     runtime: node
     plan: free
-    buildCommand: pnpm install && pnpm --filter @workspace/colab-command-center build && pnpm --filter @workspace/api-server build
+    buildCommand: pnpm install && pnpm build
     startCommand: NODE_ENV=production PORT=10000 node artifacts/api-server/dist/index.js
     healthCheckPath: /api/healthz
     envVars:
