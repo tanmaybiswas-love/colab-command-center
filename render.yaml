@@ -4,8 +4,8 @@ services:
     runtime: node
     plan: starter
     region: oregon
-    buildCommand: pnpm install && pnpm run build
-    startCommand: node artifacts/api-server/dist/index.js
+    buildCommand: cd artifacts/api-server && npm install && npm run build
+    startCommand: cd artifacts/api-server && npm start
     healthCheckPath: /api/healthz
     envVars:
       - key: NODE_VERSION
