@@ -65,15 +65,16 @@ function App() {
   const setSafeMode = (value: boolean) => { setSafeModeState(value); localStorage.setItem('ccc-safe-mode', String(value)); };
   const setConfirmExecution = (value: boolean) => { setConfirmState(value); localStorage.setItem('ccc-confirm', String(value)); };
   return (
-    <PrefsContext.Provider value={{ provider, model, safeMode, confirmExecution, apiKey, setProvider, setModel, setSafeMode, setConfirmExecution, setApiKey }}>
-      <TooltipProvider>
-        <QueryClientProvider client={queryClient}>
-          <Router>
-            <Shell />
-          </Router>
-        </QueryClientProvider>
-      </TooltipProvider>
-    </PrefsContext.Provider>
+    <QueryClientProvider client={queryClient}>
+      <PrefsContext.Provider value={{ provider, model, safeMode, confirmExecution, apiKey, setProvider, setModel, setSafeMode, setConfirmExecution, setApiKey }}>
+        <TooltipProvider>
+          <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}>
+            <RoutedErrorBoundary><Shell /></RoutedErrorBoundary>
+          </WouterRouter>
+          <Toaster />
+        </TooltipProvider>
+      </PrefsContext.Provider>
+    </QueryClientProvider>
   );
 }
 
@@ -83,9 +84,47 @@ function RoutedErrorBoundary({ children }: { children: ReactNode }) {
 }
 
 function Shell() {
+  const [location] = useLocation();
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const { data: health } = useHealthCheck({ query: { queryKey: ['/api/healthz'], refetchInterval: 30000 } });
   return (
     <div className="min-h-[100dvh] bg-background text-foreground">
-      <div>Hello from Shell</div>
+      <aside className={`fixed inset-y-0 left-0 z-40 flex w-[252px] flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground transition-transform duration-300 md:translate-x-0 ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+        <div className="flex items-center gap-3 px-6 pb-7 pt-7">
+          <div className="relative grid size-9 place-items-center rounded-xl bg-accent text-sidebar-primary-foreground shadow-[0_0_0_5px_hsl(var(--accent)/.12)]"><Terminal size={18} strokeWidth={2.5}/></div>
+          <div><div className="font-display text-[17px] font-bold tracking-tight text-sidebar-accent-foreground">colab<span className="text-accent">.</span>cc</div><div className="mono mt-0.5 text-[9px] uppercase tracking-[.2em] text-sidebar-foreground/55">command center</div></div>
+        </div>
+        <div className="mx-4 mb-6 rounded-xl border border-sidebar-border bg-sidebar-accent/60 p-3">
+          <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[.14em] text-sidebar-foreground/55"><span className={`size-1.5 rounded-full ${health?.status === 'ok' ? 'bg-emerald-400' : 'bg-accent'}`}/> control plane</div>
+          <div className="mt-2 flex items-center justify-between text-xs"><span className="text-sidebar-foreground/75">{health?.status === 'ok' ? 'API operational' : 'Checking service'}</span><span className="mono text-sidebar-foreground/45">v0.8.4</span></div>
+        </div>
+        <nav className="space-y-1 px-3">
+          <div className="px-3 pb-2 text-[10px] font-bold uppercase tracking-[.18em] text-sidebar-foreground/35">Workspace</div>
+          <SideLink href="/" active={location === '/'} icon={<Gauge size={17}/>} label="Command center" testId="link-command-center"/>
+          <SideLink href="/setup" active={location === '/setup'} icon={<PlugZap size={17}/>} label="Connect runtime" testId="link-setup"/>
+          <SideLink href="/settings" active={location === '/settings'} icon={<Settings2 size={17}/>} label="Settings" testId="link-settings"/>
+        </nav>
+        <div className="mt-auto p-4">
+          <div className="rounded-xl border border-sidebar-border p-3">
+            <div className="flex items-center gap-2 text-xs font-semibold text-sidebar-accent-foreground"><ShieldCheck size={15} className="text-accent"/> Safety defaults on</div>
+            <p className="mt-1.5 text-[11px] leading-relaxed text-sidebar-foreground/55">Commands stay queued until your runtime is ready.</p>
+          </div>
+          <div className="mt-5 flex items-center justify-between px-2 text-[10px] text-sidebar-foreground/35"><span>PRIVATE SESSION</span><CircleHelp size={13}/></div>
+        </div>
+      </aside>
+      {mobileOpen && <button aria-label="Close menu" data-testid="button-close-menu" onClick={() => setMobileOpen(false)} className="fixed inset-0 z-30 bg-sidebar/30 md:hidden"/>}
+      <div className="md:pl-[252px]">
+        <header className="sticky top-0 z-20 flex h-[70px] items-center justify-between border-b border-border/70 bg-background/90 px-5 backdrop-blur-xl md:px-9">
+          <button onClick={() => setMobileOpen(true)} data-testid="button-open-menu" className="rounded-lg p-2 hover:bg-muted md:hidden"><Menu size={20}/></button>
+          <div className="hidden text-xs text-muted-foreground md:block"><span className="mono text-[10px] tracking-[.12em] text-primary">LOCAL /</span> {location === '/' ? 'command center' : location.slice(1)}</div>
+          <div className="ml-auto flex items-center gap-2.5">
+            <Link href="/setup" data-testid="link-header-connect" className="hidden items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-xs font-semibold text-foreground hover:border-primary/50 hover:bg-secondary sm:flex"><PlugZap size={14} className="text-primary"/> Connect runtime</Link>
+            <Link href="/settings" data-testid="link-header-settings" className="grid size-9 place-items-center rounded-lg border border-border bg-card text-muted-foreground hover:text-foreground"><Settings2 size={16}/></Link>
+            <div className="grid size-9 place-items-center rounded-full bg-primary text-[11px] font-bold text-primary-foreground">CC</div>
+          </div>
+        </header>
+        <main className="mx-auto max-w-[1500px] px-4 py-6 md:px-9 md:py-8"><Switch><Route path="/" component={CommandCenter}/><Route path="/setup" component={SetupPage}/><Route path="/settings" component={SettingsPage}/><Route component={NotFound}/></Switch></main>
+      </div>
     </div>
   );
 }
