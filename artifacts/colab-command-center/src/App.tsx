@@ -67,7 +67,7 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <PrefsContext.Provider value={{ provider, model, safeMode, confirmExecution, apiKey, setProvider, setModel, setSafeMode, setConfirmExecution, setApiKey }}>
-        <div>Hello World</div>
+        <Shell />
       </PrefsContext.Provider>
     </QueryClientProvider>
   );
