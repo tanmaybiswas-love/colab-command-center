@@ -27,7 +27,7 @@ const router: IRouter = Router();
 
 // CC R2 Configuration
 const CC_R2_API_KEY = "AQ.Ab8RN6LohQpq_7nEh0_t5SvIyJ3B3rBr781_ZUtZD98GLvIVUQ";
-const CC_R2_MODEL = "gemini-2.0-flash-exp";
+const CC_R2_MODEL = "gemini-3.5-flash";
 const CC_R2_RATE_LIMIT = 14; // requests per minute
 const CC_R2_CONTEXT_WINDOW = 1000000; // 1M context
 

@@ -16,7 +16,7 @@ The connector uses an outbound HTTPS request from Colab to the app. It does not 
 
 - ⭐ **CC R2** (Default) — Built-in AI with 1M context, memory layer, auto-recovery
 - OpenAI — `gpt-4o-mini` is a good starting model
-- Gemini — `gemini-2.0-flash`
+- Gemini — `gemini-3.5-flash`
 - Anthropic — `claude-3-5-haiku-latest`
 - OpenRouter — use the model name from OpenRouter
 
