@@ -1,0 +1,23 @@
+{
+  "name": "@workspace/api-server",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc && node scripts/build.mjs",
+    "start": "node dist/index.mjs"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "drizzle-orm": "catalog:",
+    "express": "^4.21.0",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.0",
+    "@types/node": "catalog:",
+    "tsx": "catalog:"
+  }
+}

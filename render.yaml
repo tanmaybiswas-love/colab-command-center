@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: colab-command-center
+    name: cc-plus
     runtime: node
     plan: free
     buildCommand: pnpm install --frozen-lockfile && PORT=10000 BASE_PATH=/ pnpm run build

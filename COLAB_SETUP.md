@@ -1,6 +1,6 @@
-# Colab Command Center
+# CC+ (Colab Command Center)
 
-Colab Command Center gives you a private, Gemini-like control surface for a Google Colab runtime. The web app can ask an AI provider for Python, show the generated code, and—only after confirmation—queue it for the connected Colab notebook.
+⭐ **CC R2** - AI-powered control center for Google Colab runtimes with memory layer.
 
 ## Start a Colab connection
 
@@ -14,10 +14,18 @@ The connector uses an outbound HTTPS request from Colab to the app. It does not 
 
 ## Supported AI providers
 
+- ⭐ **CC R2** (Default) — Built-in AI with 1M context, memory layer, auto-recovery
 - OpenAI — `gpt-4o-mini` is a good starting model
 - Gemini — `gemini-2.0-flash`
 - Anthropic — `claude-3-5-haiku-latest`
 - OpenRouter — use the model name from OpenRouter
+
+## CC R2 Features
+
+- **1M context window**: Handle large codebases and long conversations
+- **Memory layer**: Remembers previous conversation context
+- **14 req/min rate limit** with auto-recovery
+- **Safe execution**: Code requires user confirmation before running
 
 API keys are sent only for the current request and are not stored by the app. Do not paste keys into notebook cells or chat messages.
 
@@ -26,7 +34,5 @@ API keys are sent only for the current request and are not stored by the app. Do
 1. Push this repository to GitHub.
 2. In Render, choose **New → Blueprint** and select the repository.
 3. Render will read `render.yaml`, build the workspace, and start the unified web service.
-4. Add no AI provider key as a Render environment variable when using Bring Your Own Key mode; enter it in the app for each session.
+4. Add no AI provider key as a Render environment variable when using CC R2 or Bring Your Own Key mode; enter it in the app for each session.
 5. Keep the Render service on a persistent instance if you need a long-running Colab connection. The free instance can sleep, which disconnects the in-memory runtime session.
-
-The first MVP keeps the active connector session in server memory. For multiple users or always-on operation, add a persistent database/Redis session layer and user authentication before exposing it broadly.
