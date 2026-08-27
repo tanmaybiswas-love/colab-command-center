@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "build": "pnpm --filter @workspace/colab-command-center build && pnpm --filter @workspace/api-server build"
+    "build": "pnpm --filter @workspace/colab-command-center build && pnpm --filter @workspace/api-server build",
+    "start": "node artifacts/api-server/dist/index.js"
   }
 }

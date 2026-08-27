@@ -2,11 +2,15 @@ services:
   - type: web_service
     name: colab-command-center
     runtime: node
-    plan: free
+    plan: starter
     region: oregon
     buildCommand: pnpm install && pnpm run build
-    startCommand: NODE_ENV=production PORT=10000 node artifacts/api-server/dist/index.js
+    startCommand: pnpm start
     healthCheckPath: /api/healthz
     envVars:
       - key: NODE_VERSION
         value: "24"
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
