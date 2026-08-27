@@ -10,14 +10,14 @@
   },
   "dependencies": {
     "cors": "^2.8.5",
-    "drizzle-orm": "^0.45.2",
+    "drizzle-orm": "catalog:",
     "express": "^4.21.0",
-    "zod": "^3.25.76"
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",
-    "@types/node": "^25.3.3",
-    "tsx": "^4.21.0"
+    "@types/node": "catalog:",
+    "tsx": "catalog:"
   }
 }
