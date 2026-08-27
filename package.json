@@ -1,10 +1,5 @@
 {
   "name": "cc-plus-workspace",
   "version": "1.0.0",
-  "private": true,
-  "scripts": {
-    "build": "pnpm --filter @workspace/colab-command-center build && pnpm --filter @workspace/api-server build",
-    "dev": "pnpm --filter @workspace/colab-command-center dev",
-    "start": "pnpm --filter @workspace/api-server start"
-  }
+  "private": true
 }
