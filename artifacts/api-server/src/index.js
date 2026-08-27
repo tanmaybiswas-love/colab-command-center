@@ -29,7 +29,7 @@ let eventCursor = 0;
 // ==================== Health ====================
 app.get('/api/healthz', (req, res) => {
   res.json({
-    healthy: true,
+    status: "ok",
     timestamp: new Date().toISOString(),
   });
 });
