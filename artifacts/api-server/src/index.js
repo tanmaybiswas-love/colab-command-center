@@ -321,6 +321,19 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(frontendPath, 'index.html'));
 });
 
+// Debug endpoint
+app.get('/api/debug', (req, res) => {
+  const fs = require('fs');
+  const exists = fs.existsSync(frontendPath);
+  const files = exists ? fs.readdirSync(frontendPath) : [];
+  res.json({
+    frontendPath,
+    exists,
+    files,
+    __dirname,
+  });
+});
+
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running on port ${PORT}`);
   console.log(`Frontend: http://localhost:${PORT}/`);
