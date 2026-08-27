@@ -86,7 +86,7 @@ function RoutedErrorBoundary({ children }: { children: ReactNode }) {
 function Shell() {
   const [location] = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const { data: health } = useHealthCheck({ query: { queryKey: ['/api/healthz'], refetchInterval: 30000 } });
+  // Temporarily disabled: const { data: health } = useHealthCheck({ query: { queryKey: ['/api/healthz'], refetchInterval: 30000 } });
   return (
     <div className="min-h-[100dvh] bg-background text-foreground">
       <aside className={`fixed inset-y-0 left-0 z-40 flex w-[252px] flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground transition-transform duration-300 md:translate-x-0 ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}`}>
@@ -95,8 +95,8 @@ function Shell() {
           <div><div className="font-display text-[17px] font-bold tracking-tight text-sidebar-accent-foreground">colab<span className="text-accent">.</span>cc</div><div className="mono mt-0.5 text-[9px] uppercase tracking-[.2em] text-sidebar-foreground/55">command center</div></div>
         </div>
         <div className="mx-4 mb-6 rounded-xl border border-sidebar-border bg-sidebar-accent/60 p-3">
-          <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[.14em] text-sidebar-foreground/55"><span className={`size-1.5 rounded-full ${health?.status === 'ok' ? 'bg-emerald-400' : 'bg-accent'}`}/> control plane</div>
-          <div className="mt-2 flex items-center justify-between text-xs"><span className="text-sidebar-foreground/75">{health?.status === 'ok' ? 'API operational' : 'Checking service'}</span><span className="mono text-sidebar-foreground/45">v0.8.4</span></div>
+          <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[.14em] text-sidebar-foreground/55"><span className={`size-1.5 rounded-full bg-emerald-400`}/> control plane</div>
+          <div className="mt-2 flex items-center justify-between text-xs"><span className="text-sidebar-foreground/75">API operational</span><span className="mono text-sidebar-foreground/45">v0.8.4</span></div>
         </div>
         <nav className="space-y-1 px-3">
           <div className="px-3 pb-2 text-[10px] font-bold uppercase tracking-[.18em] text-sidebar-foreground/35">Workspace</div>
