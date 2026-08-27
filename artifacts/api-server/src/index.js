@@ -37,56 +37,102 @@ app.get('/api/healthz', (req, res) => {
 // ==================== Runtime Status ====================
 app.get('/api/runtime/status', (req, res) => {
   res.json({
-    state: runtimeState.state,
+    state: runtimeState.state === 'disconnected' ? 'offline' : runtimeState.state,
+    sessionId: runtimeState.sessionId,
+    label: runtimeState.label,
     connectedAt: runtimeState.connectedAt,
-    lastActivity: runtimeState.lastActivity,
+    lastSeenAt: runtimeState.lastActivity,
+    queuedCommands: 0,
+    pythonVersion: runtimeState.pythonVersion,
   });
 });
 
 // ==================== Runtime Bootstrap ====================
 app.post('/api/runtime/bootstrap', (req, res) => {
-  const { provider, model } = req.body;
+  const { label } = req.body;
   
   // Generate session credentials
   const sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   const token = `token_${Math.random().toString(36).substr(2, 16)}`;
+  const expiresAt = new Date(Date.now() + 30 * 60 * 1000).toISOString(); // 30 minutes
   
   runtimeState.sessionId = sessionId;
   runtimeState.token = token;
+  runtimeState.label = label;
   runtimeState.state = 'waiting';
+  
+  // Generate connector code for Colab
+  const connectorCode = `# Colab Command Center - Connector
+# Run this cell in your Colab notebook to connect
+
+import urllib.request
+import json
+import time
+
+SESSION_ID = "${sessionId}"
+TOKEN = "${token}"
+API_BASE = "${process.env.API_BASE_URL || 'https://colab-command-center-1.onrender.com'}"
+
+def send_event(event_type, message, payload=None, command_id=None):
+    try:
+        data = {
+            "sessionId": SESSION_ID,
+            "token": TOKEN,
+            "type": event_type,
+            "message": message,
+            "payload": payload,
+            "commandId": command_id
+        }
+        req = urllib.request.Request(
+            f"{API_BASE}/api/colab/events",
+            data=json.dumps(data).encode(),
+            headers={"Content-Type": "application/json"}
+        )
+        urllib.request.urlopen(req, timeout=10)
+    except Exception as e:
+        print(f"Error: {e}")
+
+# Register with the control plane
+try:
+    response = urllib.request.urlopen(
+        f"{API_BASE}/api/colab/connect",
+        data=json.dumps({"sessionId": SESSION_ID, "token": TOKEN}).encode(),
+        headers={"Content-Type": "application/json"},
+        timeout=10
+    )
+    print("Connected to Colab Command Center!")
+except Exception as e:
+    print(f"Connection failed: {e}")
+`;
   
   res.status(201).json({
     sessionId,
     token,
-    instructions: {
-      title: 'Connect to Colab',
-      description: 'Install the Colab Command Center extension in your Google Colab notebook and enter the session credentials below.',
-      steps: [
-        'Open your Google Colab notebook',
-        'Install the Colab Command Center extension',
-        'Click the "Connect" button in the extension',
-        'Enter your session ID and token',
-      ],
-      sessionId,
-      token,
-    },
-    provider,
-    model,
+    connectorCode,
+    expiresAt,
   });
 });
 
 // ==================== Runtime Disconnect ====================
 app.post('/api/runtime/disconnect', (req, res) => {
-  runtimeState.state = 'disconnected';
+  const { sessionId } = req.body;
+  
+  runtimeState.state = 'offline';
   runtimeState.sessionId = null;
   runtimeState.token = null;
   runtimeState.connectedAt = null;
   runtimeState.lastActivity = null;
+  runtimeState.label = null;
+  runtimeState.pythonVersion = null;
   
   res.json({
-    state: 'disconnected',
+    state: 'offline',
+    sessionId: null,
+    label: null,
     connectedAt: null,
-    lastActivity: null,
+    lastSeenAt: null,
+    queuedCommands: 0,
+    pythonVersion: null,
   });
 });
 
@@ -165,7 +211,7 @@ app.get('/api/runtime/events', (req, res) => {
 
 // ==================== Colab Connect ====================
 app.post('/api/colab/connect', (req, res) => {
-  const { sessionId, token, notebookId } = req.body;
+  const { sessionId, token, notebookId, pythonVersion } = req.body;
   
   if (sessionId !== runtimeState.sessionId || token !== runtimeState.token) {
     return res.status(401).json({
@@ -177,6 +223,7 @@ app.post('/api/colab/connect', (req, res) => {
   runtimeState.state = 'connected';
   runtimeState.connectedAt = new Date().toISOString();
   runtimeState.lastActivity = new Date().toISOString();
+  runtimeState.pythonVersion = pythonVersion || '3.10';
   
   events.push({
     id: `evt_${eventCursor++}`,
@@ -189,6 +236,7 @@ app.post('/api/colab/connect', (req, res) => {
   res.json({
     accepted: true,
     message: 'Connected to runtime',
+    sessionId,
     notebookId: notebookId || 'default',
   });
 });
