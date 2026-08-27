@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -318,7 +319,6 @@ app.get('/api/status', (req, res) => {
 
 // Debug endpoint
 app.get('/api/debug', (req, res) => {
-  const fs = require('fs');
   const exists = fs.existsSync(frontendPath);
   const files = exists ? fs.readdirSync(frontendPath) : [];
   res.json({
