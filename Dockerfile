@@ -1,31 +1,24 @@
-# Build stage
-FROM node:24-alpine AS builder
+# Stage 1: Build
+FROM node:24-slim AS builder
 
 WORKDIR /app
+
+# Copy entire project
+COPY . .
 
 # Install pnpm
-RUN corepack enable && corepack prepare pnpm@9.0.0 --activate
+RUN npm install -g pnpm@9
 
-# Copy workspace files
-COPY pnpm-workspace.yaml package.json pnpm-lock.yaml* ./
-COPY lib ./lib
-COPY artifacts ./artifacts
-
-# Install dependencies
+# Install dependencies and build
 RUN pnpm install
+RUN pnpm run build
 
-# Build frontend
-RUN pnpm --filter @workspace/colab-command-center build
-
-# Build API server
-RUN pnpm --filter @workspace/api-server build
-
-# Production stage
-FROM node:24-alpine AS production
+# Stage 2: Production
+FROM node:24-slim AS production
 
 WORKDIR /app
 
-# Copy built artifacts
+# Copy built files
 COPY --from=builder /app/artifacts ./artifacts
 
 ENV NODE_ENV=production
@@ -33,5 +26,4 @@ ENV PORT=10000
 
 EXPOSE 10000
 
-# Start API server which serves both API and frontend static files
 CMD ["node", "artifacts/api-server/dist/index.js"]
