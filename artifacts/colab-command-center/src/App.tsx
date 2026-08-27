@@ -68,9 +68,7 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <PrefsContext.Provider value={{ provider, model, safeMode, confirmExecution, apiKey, setProvider, setModel, setSafeMode, setConfirmExecution, setApiKey }}>
         <TooltipProvider>
-          <Router>
-            <Shell />
-          </Router>
+          <Shell />
         </TooltipProvider>
       </PrefsContext.Provider>
     </QueryClientProvider>
