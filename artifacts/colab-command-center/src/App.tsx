@@ -21,7 +21,7 @@ import {
   type RuntimeEvent,
 } from '@workspace/api-client-react';
 import { setBaseUrl } from '@workspace/api-client-react';
-import { Link, Route, Switch, Router as WouterRouter, useLocation } from 'wouter';
+import { Link, Route, Switch, Router, useLocation } from 'wouter';
 import {
   Activity, ArrowUpRight, Check, CircleHelp, Cloud, Code2,
   Copy, Cpu, FileCode2, Gauge, KeyRound, Laptop, Loader2, Menu,
@@ -54,7 +54,6 @@ const stateLabel = (state?: RuntimeStatus['state']) => state === 'connected' ? '
 function App() {
   useEffect(() => {
     setBaseUrl(window.location.origin);
-    console.log('App mounted');
   }, []);
   const [provider, setProviderState] = useState<Prefs['provider']>(() => (localStorage.getItem('ccc-provider') as Prefs['provider']) || 'gemini');
   const [model, setModelState] = useState(() => localStorage.getItem('ccc-model') || 'gemini-2.0-flash');
@@ -69,10 +68,10 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <PrefsContext.Provider value={{ provider, model, safeMode, confirmExecution, apiKey, setProvider, setModel, setSafeMode, setConfirmExecution, setApiKey }}>
         <TooltipProvider>
-          <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}>
+          <Router base={import.meta.env.BASE_URL.replace(/\/$/, '')}>
             <Shell />
-          </WouterRouter>
-          <Toaster />
+            <Toaster />
+          </Router>
         </TooltipProvider>
       </PrefsContext.Provider>
     </QueryClientProvider>
