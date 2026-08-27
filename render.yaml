@@ -3,7 +3,7 @@ services:
     name: cc-plus
     runtime: node
     plan: free
-    buildCommand: pnpm install && pnpm run build
+    buildCommand: npm install -g pnpm && pnpm install && pnpm run build
     startCommand: NODE_ENV=production PORT=10000 node artifacts/api-server/dist/index.js
     healthCheckPath: /api/healthz
     envVars:
