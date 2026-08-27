@@ -1,15 +1,11 @@
 services:
   - type: web
     name: colab-command-center
-    runtime: node
+    dockerfilePath: ./Dockerfile
     plan: starter
     region: oregon
-    buildCommand: cd artifacts/api-server && npm install && npm run build
-    startCommand: cd artifacts/api-server && npm start
     healthCheckPath: /api/healthz
     envVars:
-      - key: NODE_VERSION
-        value: "24"
       - key: NODE_ENV
         value: production
       - key: PORT
