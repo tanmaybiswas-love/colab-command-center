@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: colab-command-center
+    name: cc-plus
     runtime: node
     plan: free
     buildCommand: pnpm install && pnpm run build
