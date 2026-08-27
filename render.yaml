@@ -1,7 +1,6 @@
 services:
   - type: web
     name: colab-command-center
-    dockerfilePath: ./Dockerfile
     plan: starter
     region: oregon
     healthCheckPath: /api/healthz
