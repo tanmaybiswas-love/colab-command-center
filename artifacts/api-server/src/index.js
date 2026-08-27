@@ -14,11 +14,6 @@ app.use(express.json());
 const frontendPath = path.join(__dirname, '../../../colab-command-center');
 app.use(express.static(frontendPath));
 
-// Debug endpoint
-app.get('/api/debug', (req, res) => {
-  res.json({ frontendPath, exists: require('fs').existsSync(frontendPath) });
-});
-
 
 // In-memory state (in production, use Redis or a database)
 const runtimeState = {
