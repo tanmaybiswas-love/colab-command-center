@@ -54,6 +54,7 @@ const stateLabel = (state?: RuntimeStatus['state']) => state === 'connected' ? '
 function App() {
   useEffect(() => {
     setBaseUrl(window.location.origin);
+    console.log('App mounted');
   }, []);
   const [provider, setProviderState] = useState<Prefs['provider']>(() => (localStorage.getItem('ccc-provider') as Prefs['provider']) || 'gemini');
   const [model, setModelState] = useState(() => localStorage.getItem('ccc-model') || 'gemini-2.0-flash');
@@ -69,7 +70,7 @@ function App() {
       <PrefsContext.Provider value={{ provider, model, safeMode, confirmExecution, apiKey, setProvider, setModel, setSafeMode, setConfirmExecution, setApiKey }}>
         <TooltipProvider>
           <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}>
-            <RoutedErrorBoundary><Shell /></RoutedErrorBoundary>
+            <Shell />
           </WouterRouter>
           <Toaster />
         </TooltipProvider>
