@@ -30,7 +30,19 @@ import {
 } from 'lucide-react';
 import NotFound from '@/pages/not-found';
 
-const queryClient = new QueryClient();
+// Initialize base URL before app starts
+if (typeof window !== 'undefined') {
+  setBaseUrl(window.location.origin);
+}
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      staleTime: 5000,
+    },
+  },
+});
 
 type Prefs = {
   provider: 'gemini' | 'openai' | 'anthropic' | 'openrouter' | 'custom';
@@ -52,9 +64,6 @@ const formatDateTime = (date?: string | null) => date ? new Intl.DateTimeFormat(
 const stateLabel = (state?: RuntimeStatus['state']) => state === 'connected' ? 'Connected' : state === 'busy' ? 'Executing' : state === 'waiting' ? 'Waiting for connector' : state === 'error' ? 'Attention needed' : 'Offline';
 
 function App() {
-  useEffect(() => {
-    setBaseUrl(window.location.origin);
-  }, []);
   const [provider, setProviderState] = useState<Prefs['provider']>(() => (localStorage.getItem('ccc-provider') as Prefs['provider']) || 'gemini');
   const [model, setModelState] = useState(() => localStorage.getItem('ccc-model') || 'gemini-2.0-flash');
   const [safeMode, setSafeModeState] = useState(() => localStorage.getItem('ccc-safe-mode') !== 'false');
@@ -68,7 +77,7 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <PrefsContext.Provider value={{ provider, model, safeMode, confirmExecution, apiKey, setProvider, setModel, setSafeMode, setConfirmExecution, setApiKey }}>
         <TooltipProvider>
-          <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}>
+          <WouterRouter base={import.meta.env.BASE_URL?.replace(/\/$/, '')}>
             <RoutedErrorBoundary><Shell /></RoutedErrorBoundary>
           </WouterRouter>
           <Toaster />
