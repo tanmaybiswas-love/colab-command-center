@@ -77,19 +77,16 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <PrefsContext.Provider value={{ provider, model, safeMode, confirmExecution, apiKey, setProvider, setModel, setSafeMode, setConfirmExecution, setApiKey }}>
         <TooltipProvider>
-          <WouterRouter base={import.meta.env.BASE_URL?.replace(/\/$/, '')}>
-            <RoutedErrorBoundary><Shell /></RoutedErrorBoundary>
+          <WouterRouter>
+            <ErrorBoundary>
+              <Shell />
+            </ErrorBoundary>
           </WouterRouter>
           <Toaster />
         </TooltipProvider>
       </PrefsContext.Provider>
     </QueryClientProvider>
   );
-}
-
-function RoutedErrorBoundary({ children }: { children: ReactNode }) {
-  const [location] = useLocation();
-  return <ErrorBoundary resetKey={location}>{children}</ErrorBoundary>;
 }
 
 function Shell() {
