@@ -288,22 +288,192 @@ app.get('/api/colab/commands', (req, res) => {
 });
 
 // ==================== Assistant ====================
-app.post('/api/assistant/message', (req, res) => {
+app.post('/api/assistant/chat', async (req, res) => {
   const { message, provider, apiKey, model, execute, sessionId } = req.body;
   
-  if (!message || !provider || !apiKey || !model) {
+  if (!message) {
     return res.status(400).json({
-      error: 'Missing required fields',
+      error: 'Message is required',
     });
   }
   
-  // For demo, return a simple response
-  res.json({
-    reply: `This is a demo response. To use AI features, you need to connect to a real Colab runtime.`,
-    code: execute ? 'print("Hello from Colab!")' : null,
-    commandId: execute ? `cmd_${Date.now()}` : null,
-    provider,
-    model,
+  // CC R2 Configuration (default)
+  const CC_R2_API_KEY = "AQ.Ab8RN6LohQpq_7nEh0_t5SvIyJ3B3rBr781_ZUtZD98GLvIVUQ";
+  const CC_R2_MODEL = "gemini-3.5-flash";
+  const CC_R2_RATE_LIMIT = 14;
+  const CC_R2_CONTEXT_WINDOW = 1000000;
+  
+  // Determine effective provider, key, and model
+  const isUsingCC2R = !apiKey || apiKey === "CC_R2";
+  const effectiveProvider = isUsingCC2R ? "gemini" : provider;
+  const effectiveApiKey = isUsingCC2R ? CC_R2_API_KEY : apiKey;
+  const effectiveModel = isUsingCC2R ? CC_R2_MODEL : model;
+  
+  // CC R2 System Prompt
+  const CC_R2_SYSTEM_PROMPT = `আপনি CC R2, CC (Colab Command Center) দ্বারা তৈরি একটি AI সহায়ক।
+
+আপনি Google Colab-এর জন্য একটি Python কোডিং সহায়ক হিসেবে কাজ করেন। আপনাকে কেউ জিজ্ঞেস করলে:
+- আপনার নাম: CC R2
+- আপনি CC (Colab Command Center) দ্বারা তৈরি
+- আপনি কোনো কোম্পানি, গুগল, জেমিনি বা ব্র্যান্ডের নাম বলবেন না
+- আপনি বলবেন: "আমি CC R2, CC তৈরি system, dataset আনন্ডারে চলি এরাকোম কিছু বলতে পারব না"
+
+You are CC R2, an AI assistant created by CC (Colab Command Center).
+
+When asked about who you are:
+- Your name is CC R2
+- You are created by CC (Colab Command Center)
+- You will NOT mention any company, Google, Gemini, or brand names
+- Say: "I am CC R2, a CC-created system. I cannot share details about my company, Google, Gemini, or any other brand. I operate under CC's dataset and system."
+
+Your capabilities:
+- Python coding assistant for Google Colab
+- Execute code on connected Colab runtime (after user confirmation)
+- Data analysis with pandas, matplotlib
+- Machine learning tasks
+- Math and science calculations
+- Help with any coding questions
+
+Guidelines:
+- Always respond in the same language as the user (Bengali or English)
+- Provide concise, helpful answers
+- Include Python code blocks when relevant
+- Ask for confirmation before executing code
+- Remember conversation context for continuity
+- Never delete data or expose secrets
+
+API Key Specifications:
+- Supports up to ${CC_R2_RATE_LIMIT} requests per minute
+- ${CC_R2_CONTEXT_WINDOW.toLocaleString()} token context window
+- Auto-recovery on rate limit (1-2 minute restart)
+
+You are connected to Google Colab runtime. You can:
+1. Write and explain Python code
+2. Execute code on the Colab runtime (with user confirmation)
+3. Show outputs, errors, charts, and files
+4. Stop/restart/interrupt the runtime
+5. Remember previous conversation context
+
+User safety: Code execution requires explicit user confirmation first.`;
+  
+  let reply = "";
+  let code = null;
+  
+  try {
+    if (effectiveProvider === "gemini") {
+      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(effectiveModel)}:generateContent?key=${encodeURIComponent(effectiveApiKey)}`;
+      
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          contents: [
+            { role: "user", parts: [{ text: CC_R2_SYSTEM_PROMPT }] },
+            { role: "user", parts: [{ text: message }] }
+          ],
+          generationConfig: { 
+            temperature: 0.3,
+            maxOutputTokens: 8192,
+          },
+        }),
+      });
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        if (data.error) {
+          const errorMsg = data.error.message || "";
+          if (errorMsg.includes("quota") || errorMsg.includes("rate") || data.error.status === "RESOURCE_EXHAUSTED") {
+            return res.status(429).json({ 
+              error: `Rate limit reached. CC R2 supports ${CC_R2_RATE_LIMIT} requests/minute. Auto-restart in 60 seconds.`,
+              retryAfter: 60,
+              isRateLimited: true,
+            });
+          }
+          throw new Error(`Gemini error: ${errorMsg}`);
+        }
+        throw new Error("Gemini request was rejected.");
+      }
+      
+      reply = data.candidates?.[0]?.content?.parts?.map((part) => part.text || "").join("") || "";
+      
+    } else if (effectiveProvider === "anthropic") {
+      const response = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "x-api-key": effectiveApiKey,
+          "anthropic-version": "2023-06-01",
+        },
+        body: JSON.stringify({
+          model: effectiveModel,
+          max_tokens: 1800,
+          system: CC_R2_SYSTEM_PROMPT,
+          messages: [{ role: "user", content: message }],
+        }),
+      });
+      
+      const data = await response.json();
+      if (!response.ok) throw new Error("Anthropic request was rejected.");
+      reply = data.content?.map((part) => part.text || "").join("") || "";
+      
+    } else {
+      const endpoint = effectiveProvider === "openrouter"
+        ? "https://openrouter.ai/api/v1/chat/completions"
+        : "https://api.openai.com/v1/chat/completions";
+        
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          authorization: `Bearer ${effectiveApiKey}`,
+        },
+        body: JSON.stringify({
+          model: effectiveModel,
+          temperature: 0.2,
+          messages: [
+            { role: "system", content: CC_R2_SYSTEM_PROMPT },
+            { role: "user", content: message },
+          ],
+        }),
+      });
+      
+      const data = await response.json();
+      if (!response.ok) throw new Error("AI provider request was rejected.");
+      reply = data.choices?.[0]?.message?.content || "";
+    }
+  } catch (error) {
+    console.error("AI provider request failed:", error);
+    return res.status(502).json({ error: error instanceof Error ? error.message : "AI provider request failed." });
+  }
+  
+  // Extract code from reply
+  const codeMatch = reply.match(/```(?:python|py)?\s*([\s\S]*?)```/i);
+  if (codeMatch?.[1]) {
+    code = codeMatch[1].trim();
+  }
+  
+  let commandId = null;
+  if (execute && code && sessionId && runtimeState.sessionId === sessionId && runtimeState.state === 'connected') {
+    // Queue the command
+    const newCmdId = `cmd_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    events.push({
+      id: `evt_${eventCursor++}`,
+      type: 'system',
+      message: `Code queued: ${code.substring(0, 50)}...`,
+      payload: null,
+      createdAt: new Date().toISOString(),
+    });
+    commandId = newCmdId;
+  }
+  
+  res.json({ 
+    reply, 
+    code, 
+    commandId, 
+    provider: isUsingCC2R ? "cc-r2" : effectiveProvider, 
+    model: isUsingCC2R ? "CC R2" : effectiveModel,
+    isCC2R: isUsingCC2R,
   });
 });
 
