@@ -1,8 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { chat, chatWithUserKey } = require('../services/ai');
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+const prisma = require('../lib/prisma');
 
 // Chat endpoint
 router.post('/chat', async (req, res) => {
@@ -15,34 +14,27 @@ router.post('/chat', async (req, res) => {
 
     let resolvedProjectId = projectId;
 
-    // If no projectId or invalid project, create/use a default project
-    if (!resolvedProjectId) {
-      const { PrismaClient } = require('@prisma/client');
-      const p = new PrismaClient();
-      let defaultProject = await p.project.findFirst({ where: { name: 'Default Project' } });
+    if (!resolvedProjectId || resolvedProjectId === 'default') {
+      let defaultProject = await prisma.project.findFirst({ where: { name: 'Default Project' } });
       if (!defaultProject) {
-        // Find or create a default guest user
-        let guestUser = await p.user.findFirst({ where: { email: 'guest@cc-indirect.local' } });
+        let guestUser = await prisma.user.findFirst({ where: { email: 'guest@cc-indirect.local' } });
         if (!guestUser) {
-          guestUser = await p.user.create({
+          guestUser = await prisma.user.create({
             data: { email: 'guest@cc-indirect.local', name: 'Guest' }
           });
         }
-        defaultProject = await p.project.create({
+        defaultProject = await prisma.project.create({
           data: { userId: guestUser.id, name: 'Default Project', language: 'javascript' }
         });
       }
       resolvedProjectId = defaultProject.id;
-      await p.$disconnect();
     }
 
     let result;
 
-    // If user provided their own API key, use it
     if (userApiKey) {
       result = await chatWithUserKey(resolvedProjectId, message, userApiKey, userProvider || 'openai');
     } else {
-      // Use admin keys with rate limiting
       result = await chat(resolvedProjectId, message, provider || 'auto');
     }
 
@@ -61,7 +53,7 @@ router.post('/chat', async (req, res) => {
   }
 });
 
-// Stream chat (for real-time feel)
+// Stream chat
 router.post('/chat/stream', async (req, res) => {
   const { projectId, message } = req.body;
 
@@ -89,13 +81,17 @@ router.post('/chat/stream', async (req, res) => {
 
 // Get providers status
 router.get('/providers', async (req, res) => {
-  res.json({
-    providers: [
-      { id: 'cc-v1', name: 'CC v1', status: 'active', rpm: 10 },
-      { id: 'cc-v2', name: 'CC v2', status: 'active', rpm: 14 },
-      { id: 'custom', name: 'Your Key', status: 'available', rpm: 'unlimited' }
-    ]
-  });
+  const providersList = [
+    { id: 'cc-r2', name: 'CC R2', status: 'active', rpm: 30 },
+    { id: 'cc-v1', name: 'CC v1', status: process.env.CC_V1_KEY ? 'active' : 'unconfigured', rpm: 10 },
+    { id: 'custom', name: 'Your Key', status: 'available', rpm: 'unlimited' }
+  ];
+
+  if (process.env.KAGGLE_WORKER_URL) {
+    providersList.push({ id: 'kaggle', name: 'CC indirect system (Kaggle GPU)', status: 'active', rpm: 'unlimited' });
+  }
+
+  res.json({ providers: providersList });
 });
 
 module.exports = router;

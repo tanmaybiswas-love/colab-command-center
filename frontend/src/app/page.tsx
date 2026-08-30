@@ -27,8 +27,8 @@ export default function Home() {
     {
       id: 'welcome',
       role: 'assistant',
-      content: 'Ready. Describe what you want to build — I\'ll write the code, run it, and explain everything.',
-      provider: 'CC',
+      content: 'আমি CC R2। বলুন কি তৈরি করতে চান — আমি কোড লিখবো এবং সাহায্য করবো।',
+      provider: 'CC R2',
       timestamp: new Date()
     }
   ]);
@@ -40,7 +40,7 @@ export default function Home() {
   const [currentProject, setCurrentProject] = useState<string>('default');
   const [userApiKey, setUserApiKey] = useState('');
   const [userProvider, setUserProvider] = useState('openai');
-  const [selectedModel, setSelectedModel] = useState('auto');
+  const [selectedModel, setSelectedModel] = useState('cc-r2');
   const [showModelSelect, setShowModelSelect] = useState(false);
   const [showAdminKeys, setShowAdminKeys] = useState(false);
   const [showUserKeys, setShowUserKeys] = useState(false);
@@ -59,9 +59,31 @@ export default function Home() {
   const loadProjects = async () => {
     try {
       const res = await axios.get(`${API_URL}/api/projects`);
-      setProjects(res.data);
+      const list = Array.isArray(res.data) ? res.data : (res.data.projects || []);
+      setProjects(list);
     } catch (e) {
       console.log('No projects yet');
+    }
+  };
+
+  const selectProject = async (projectId: string) => {
+    setCurrentProject(projectId);
+    setDrawerOpen(false);
+    if (projectId === 'default') return;
+    try {
+      const res = await axios.get(`${API_URL}/api/projects/${projectId}`);
+      if (res.data.project && res.data.project.messages) {
+        const loadedMsgs: Message[] = res.data.project.messages.map((m: any) => ({
+          id: m.id,
+          role: m.role as 'user' | 'assistant',
+          content: m.content,
+          model: m.model,
+          timestamp: new Date(m.createdAt)
+        }));
+        setMessages(loadedMsgs);
+      }
+    } catch (e) {
+      console.error('Failed to load project messages:', e);
     }
   };
 
@@ -72,13 +94,14 @@ export default function Home() {
         language: 'javascript',
         userId: 'guest'
       });
-      setProjects(prev => [res.data, ...prev]);
-      setCurrentProject(res.data.id);
+      const project = res.data.project || res.data;
+      setProjects(prev => [project, ...prev]);
+      setCurrentProject(project.id);
       setMessages([{
-        id: 'welcome-' + res.data.id,
+        id: 'welcome-' + project.id,
         role: 'assistant',
         content: `Project "${name}" created. What would you like to build?`,
-        provider: 'CC',
+        provider: 'CC R2',
         timestamp: new Date()
       }]);
     } catch (e) {
@@ -86,19 +109,21 @@ export default function Home() {
     }
   };
 
-  const sendMessage = useCallback(async () => {
-    const text = input.trim();
+  const sendMessage = useCallback(async (retryText?: string) => {
+    const text = (retryText || input).trim();
     if (!text || isTyping) return;
 
-    const userMsg: Message = {
-      id: uuidv4(),
-      role: 'user',
-      content: text,
-      timestamp: new Date()
-    };
+    if (!retryText) {
+      const userMsg: Message = {
+        id: uuidv4(),
+        role: 'user',
+        content: text,
+        timestamp: new Date()
+      };
+      setMessages(prev => [...prev, userMsg]);
+      setInput('');
+    }
 
-    setMessages(prev => [...prev, userMsg]);
-    setInput('');
     setIsTyping(true);
 
     if (inputRef.current) {
@@ -109,7 +134,7 @@ export default function Home() {
       const res = await axios.post(`${API_URL}/api/ai/chat`, {
         projectId: currentProject,
         message: text,
-        provider: selectedModel === 'auto' ? 'auto' : selectedModel,
+        provider: selectedModel === 'auto' ? 'cc-r2' : selectedModel,
         userApiKey: userApiKey || undefined,
         userProvider: userProvider
       }, { timeout: 120000 });
@@ -118,7 +143,7 @@ export default function Home() {
         id: res.data.message.id || uuidv4(),
         role: 'assistant',
         content: res.data.message.content,
-        provider: res.data.provider,
+        provider: res.data.provider || 'CC R2',
         model: res.data.model,
         timestamp: new Date()
       };
@@ -135,16 +160,10 @@ export default function Home() {
       setMessages(prev => [...prev, errorMsg]);
 
       if (err.response?.data?.retryAfter) {
+        const retryIn = err.response.data.retryAfter + 2;
         setTimeout(() => {
-          setMessages(prev => [...prev, {
-            id: uuidv4(),
-            role: 'assistant',
-            content: 'Retrying now...',
-            provider: 'System',
-            timestamp: new Date()
-          }]);
-          sendMessage();
-        }, (err.response.data.retryAfter + 5) * 1000);
+          sendMessage(text);
+        }, retryIn * 1000);
       }
     } finally {
       setIsTyping(false);
@@ -160,14 +179,13 @@ export default function Home() {
 
   const autoResize = (el: HTMLTextAreaElement) => {
     el.style.height = 'auto';
-    el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+    el.style.height = Math.min(el.scrollHeight, 100) + 'px';
   };
 
   const models = [
-    { id: 'auto', name: 'Auto Route (Smart)', desc: 'Smart selection', dot: 'on' },
-    { id: 'cc-v1', name: 'CC v1', desc: 'Deep coding engine', dot: 'on' },
-    { id: 'cc-v2', name: 'CC v2', desc: 'Fast inference engine', dot: 'on' },
-    { id: 'custom', name: 'Your Key', desc: 'Use your own API', dot: 'off' }
+    { id: 'cc-r2', name: 'CC R2 (Default)', desc: 'Default Gemini engine', dot: 'on' },
+    { id: 'cc-v1', name: 'CC v1', desc: 'Alternative engine', dot: 'on' },
+    { id: 'custom', name: 'Your Key (= format)', desc: 'Use custom API key or provider=key', dot: 'off' }
   ];
 
   const copyCode = (code: string) => {
@@ -180,7 +198,6 @@ export default function Home() {
 
     return (
       <div className="msg-body">
-        <div className="msg-name">{msg.role === 'assistant' ? 'CC' : 'You'}</div>
         <div className={`msg-bubble ${msg.role === 'assistant' ? 'ai' : 'user'}`}>
           {parts.map((part, i) => {
             if (part.startsWith('```')) {
@@ -211,7 +228,7 @@ export default function Home() {
             <div className="msg-actions">
               <button className="msg-action primary">▶ Run</button>
               <button className="msg-action">📋 Copy All</button>
-              <button className="msg-action">🔍 Explain</button>
+              <button className="msg-action">🔍 Details</button>
             </div>
           )}
         </div>
@@ -225,22 +242,22 @@ export default function Home() {
         <button className="menu-btn" onClick={() => setDrawerOpen(true)}>☰</button>
         <div className="brand">
           <span className="brand-dot"></span>
-          CC <span>- indirect</span>
+          CC+ <span>(Colab Command Center)</span>
         </div>
         <div className="header-right">
-          <span className="status-text">● online</span>
+          <span className="status-text">Colab Connected</span>
         </div>
       </header>
 
       <main className="main" ref={mainRef}>
         <div className="hero">
-          <h1>Build with<br /><span>intelligence.</span></h1>
-          <p>Describe what you want. The AI writes, debugs, and deploys — all in one chat.</p>
+          <h1>CC+<br /><span>Colab Command Center</span></h1>
+          <p>Describe what you want to build. Writes code, executes, and explains everything.</p>
         </div>
 
         <div className="chat-area">
           {messages.map((msg) => (
-            <div key={msg.id} className="msg" style={{ animation: 'msgIn 0.25s ease' }}>
+            <div key={msg.id} className={`msg ${msg.role === 'assistant' ? 'ai' : 'user'}`}>
               <div className={`msg-avatar ${msg.role === 'assistant' ? 'ai' : 'user'}`}>
                 {msg.role === 'assistant' ? '◈' : '◉'}
               </div>
@@ -249,14 +266,13 @@ export default function Home() {
           ))}
 
           {isTyping && (
-            <div className="msg">
+            <div className="msg ai">
               <div className="msg-avatar ai">◈</div>
               <div className="msg-body">
-                <div className="msg-name">CC</div>
                 <div className="msg-bubble ai" style={{ padding: '14px 16px' }}>
-                  <span className="typing-dot" style={{ display: 'inline-block', width: 6, height: 6, borderRadius: '50%', background: '#4b5563', marginRight: 4 }}></span>
-                  <span className="typing-dot" style={{ display: 'inline-block', width: 6, height: 6, borderRadius: '50%', background: '#4b5563', marginRight: 4 }}></span>
-                  <span className="typing-dot" style={{ display: 'inline-block', width: 6, height: 6, borderRadius: '50%', background: '#4b5563' }}></span>
+                  <span className="typing-dot"></span>
+                  <span className="typing-dot"></span>
+                  <span className="typing-dot"></span>
                 </div>
               </div>
             </div>
@@ -275,7 +291,7 @@ export default function Home() {
             onChange={(e) => { setInput(e.target.value); autoResize(e.target); }}
             onKeyDown={handleKeyDown}
           />
-          <button className="send-btn" onClick={sendMessage} disabled={isTyping || !input.trim()}>
+          <button className="send-btn" onClick={() => sendMessage()} disabled={isTyping || !input.trim()}>
             ↑
           </button>
         </div>
@@ -287,8 +303,8 @@ export default function Home() {
         <div className="drawer-header">
           <div className="drawer-logo">◈</div>
           <div className="drawer-header-text">
-            <div className="drawer-header-title">CC - indirect</div>
-            <div className="drawer-header-sub">v1.0.0</div>
+            <div className="drawer-header-title">CC+</div>
+            <div className="drawer-header-sub">Colab Command Center</div>
           </div>
           <button className="drawer-close" onClick={() => setDrawerOpen(false)}>✕</button>
         </div>
@@ -308,26 +324,17 @@ export default function Home() {
                   if (name) createProject(name);
                 }}>+ New Project</div>
                 {projects.map(p => (
-                  <div key={p.id} className="drawer-sub-item" onClick={() => {
-                    setCurrentProject(p.id);
-                    setDrawerOpen(false);
-                  }}>{p.name}</div>
+                  <div key={p.id} className="drawer-sub-item" onClick={() => selectProject(p.id)}>{p.name}</div>
                 ))}
-                <div className="drawer-sub-item" onClick={() => { setCurrentProject('default'); setDrawerOpen(false); }}>Default</div>
+                <div className="drawer-sub-item" onClick={() => selectProject('default')}>Default</div>
               </div>
             )}
-            <div className="drawer-item" onClick={() => setActiveTab(activeTab === 'files' ? '' : 'files')}>
-              <span className="drawer-item-icon">📄</span>
-              <span className="drawer-item-text">Files</span>
-              <span className="drawer-item-arrow">›</span>
-            </div>
             <div className="drawer-item" onClick={() => {
-              // Clear chat
               setMessages([{
                 id: 'cleared',
                 role: 'assistant',
                 content: 'Chat cleared. What would you like to build?',
-                provider: 'CC',
+                provider: 'CC R2',
                 timestamp: new Date()
               }]);
               setDrawerOpen(false);
@@ -342,12 +349,12 @@ export default function Home() {
             <div className="drawer-item" onClick={() => setShowModelSelect(!showModelSelect)}>
               <span className="drawer-item-icon">🤖</span>
               <span className="drawer-item-text">
-                {models.find(m => m.id === selectedModel)?.name || 'Auto Route (Smart)'}
+                {models.find(m => m.id === selectedModel)?.name || 'CC R2 (Default)'}
               </span>
               <span className="drawer-item-arrow">›</span>
             </div>
             {showModelSelect && (
-              <div className="model-list drawer-sub open" style={{ padding: '0 8px', display: 'block' }}>
+              <div className="model-list drawer-sub open">
                 {models.map(m => (
                   <div key={m.id} className={`model-item ${selectedModel === m.id ? 'selected' : ''}`}
                     onClick={() => { setSelectedModel(m.id); setShowModelSelect(false); }}>
@@ -363,15 +370,13 @@ export default function Home() {
             <div className="drawer-section-title">API Keys</div>
             <div className="drawer-item" onClick={() => setShowAdminKeys(!showAdminKeys)}>
               <span className="drawer-item-icon">🔐</span>
-              <span className="drawer-item-text">Admin Keys</span>
+              <span className="drawer-item-text">System Key</span>
               <span className="drawer-item-arrow">›</span>
             </div>
             {showAdminKeys && (
               <div className="drawer-sub open">
                 <div className="key-section">
-                  <div className="key-label">CC v1 Key (Admin)</div>
-                  <input className="key-input" type="password" value="••••••configured" readOnly />
-                  <div className="key-label">CC v2 Key (Admin)</div>
+                  <div className="key-label">CC R2 Key</div>
                   <input className="key-input" type="password" value="••••••configured" readOnly />
                 </div>
               </div>
@@ -384,11 +389,11 @@ export default function Home() {
             {showUserKeys && (
               <div className="drawer-sub open">
                 <div className="key-section">
-                  <div className="key-label">Your API Key (Optional)</div>
+                  <div className="key-label">Your API Key (or provider=key)</div>
                   <input
                     className="key-input"
                     type="password"
-                    placeholder="sk-..."
+                    placeholder="gemini=AIza... or sk-..."
                     value={userApiKey}
                     onChange={(e) => setUserApiKey(e.target.value)}
                   />
@@ -399,9 +404,8 @@ export default function Home() {
                     onChange={(e) => setUserProvider(e.target.value)}
                     style={{ color: '#d1d5db' }}
                   >
-                    <option value="openai">OpenAI-compatible</option>
-                    <option value="anthropic">Anthropic-compatible</option>
                     <option value="gemini">Gemini-compatible</option>
+                    <option value="openai">OpenAI-compatible</option>
                     <option value="custom">Custom Endpoint</option>
                   </select>
                   <button className="key-save" onClick={() => {
@@ -419,10 +423,6 @@ export default function Home() {
               <span className="drawer-item-icon">🌙</span>
               <span className="drawer-item-text">Dark Mode</span>
               <span style={{ marginLeft: 'auto', fontSize: 11, color: '#374151' }}>Always on</span>
-            </div>
-            <div className="drawer-item">
-              <span className="drawer-item-icon">ℹ️</span>
-              <span className="drawer-item-text">About</span>
             </div>
           </div>
         </div>

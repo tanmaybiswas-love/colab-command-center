@@ -1,7 +1,26 @@
 const express = require('express');
 const router = express.Router();
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+const prisma = require('../lib/prisma');
+
+// Get all projects or user's projects
+router.get('/', async (req, res) => {
+  try {
+    const { userId } = req.query;
+    const where = userId ? { userId } : {};
+
+    const projects = await prisma.project.findMany({
+      where,
+      include: {
+        _count: { select: { messages: true, files: true } }
+      },
+      orderBy: { updatedAt: 'desc' }
+    });
+
+    res.json(projects);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 // Create project
 router.post('/', async (req, res) => {

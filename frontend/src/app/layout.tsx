@@ -1,8 +1,8 @@
 import './globals.css'
 
 export const metadata = {
-  title: 'CC - indirect',
-  description: 'AI-powered coding assistant',
+  title: 'CC+ (Colab Command Center)',
+  description: 'AI-powered coding assistant & Colab command center',
 };
 
 export default function RootLayout({
